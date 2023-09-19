@@ -49,6 +49,12 @@ type Option struct {
 	DocIndexName      string //文档存储
 }
 
+func NewEngine() *Engine {
+	return &Engine{
+
+	}
+}
+
 // Init 初始化索引引擎
 func (e *Engine) Init() {
 	e.Add(1)
@@ -530,15 +536,24 @@ func (e *Engine) GetIndexCount() int64 {
 // GetDocumentCount 获取文档数量
 func (e *Engine) GetDocumentCount() int64 {
 	if e.documentCount == -1 {
-		var count int64
+		var (
+			count int64
+			mtx sync.Mutex
+		)
 		//使用多线程加速统计
+		// todo faster Implementation plan for Quick calculations and quantity statistics
 		wg := sync.WaitGroup{}
 		wg.Add(e.Shard)
 		//这里的统计可能会出现数据错误，因为没加锁
 		for i := 0; i < e.Shard; i++ {
 			go func(i int) {
+				mtx.Lock()
+				defer func() {
+					mtx.Unlock()
+					wg.Done()
+				}()
+
 				count += e.docStorages[i].GetCount()
-				wg.Done()
 			}(i)
 		}
 		wg.Wait()
