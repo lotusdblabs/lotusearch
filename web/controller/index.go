@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/sea-team/gofound/searcher/model"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
