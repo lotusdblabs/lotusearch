@@ -2,8 +2,9 @@ package system
 
 import (
 	"fmt"
-	"github.com/shirou/gopsutil/v3/cpu"
 	"testing"
+
+	"github.com/shirou/gopsutil/v3/cpu"
 )
 
 func TestCPU(t *testing.T) {

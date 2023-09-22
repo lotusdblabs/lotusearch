@@ -8,3 +8,4 @@ gofound
 /cache
 /tests/index
 /data
+.DS_Store

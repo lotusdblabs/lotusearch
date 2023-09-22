@@ -10,11 +10,14 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
+// TODO: github.com/syndtr/goleveldb/leveldb is good, but released on Feb 22,2019,
+//  so maybe we can choose the other better one. :-)
+
 // LeveldbStorage TODO 要支持事务
 type LeveldbStorage struct {
 	db       *leveldb.DB
 	path     string
-	mu       sync.RWMutex //加锁
+	mu       sync.RWMutex // 加锁
 	closed   bool
 	timeout  int64
 	lastTime int64
@@ -45,24 +48,24 @@ func NewStorage(path string, timeout int64) (*LeveldbStorage, error) {
 
 func (s *LeveldbStorage) task() {
 	if s.timeout == -1 {
-		//不检查
+		// 不检查
 		return
 	}
 	for {
 
 		if !s.isClosed() && time.Now().Unix()-s.lastTime > s.timeout {
 			s.Close()
-			//log.Println("leveldb storage timeout", s.path)
+			// log.Println("leveldb storage timeout", s.path)
 		}
 
-		time.Sleep(time.Duration(5) * time.Second)
+		time.Sleep(5 * time.Second)
 
 	}
 }
 
 func openDB(path string) (*leveldb.DB, error) {
 
-	////使用布隆过滤器
+	// 使用布隆过滤器
 	o := &opt.Options{
 		Filter: filter.NewBloomFilter(10),
 	}
@@ -70,6 +73,7 @@ func openDB(path string) (*leveldb.DB, error) {
 	db, err := leveldb.OpenFile(path, o)
 	return db, err
 }
+
 func (s *LeveldbStorage) ReOpen() {
 	if !s.isClosed() {
 		log.Println("db is not closed")
@@ -83,7 +87,7 @@ func (s *LeveldbStorage) ReOpen() {
 	s.db = db
 	s.closed = false
 	s.mu.Unlock()
-	//计算总条数
+	// 计算总条数
 	go s.compute()
 }
 
@@ -96,6 +100,7 @@ func (s *LeveldbStorage) Get(key []byte) ([]byte, bool) {
 	return buffer, true
 }
 
+// Has determined the key exist or not
 func (s *LeveldbStorage) Has(key []byte) bool {
 	s.autoOpenDB()
 	has, err := s.db.Has(key, nil)
@@ -105,6 +110,7 @@ func (s *LeveldbStorage) Has(key []byte) bool {
 	return has
 }
 
+// Set store the key and value
 func (s *LeveldbStorage) Set(key []byte, value []byte) {
 	s.autoOpenDB()
 	err := s.db.Put(key, value, nil)

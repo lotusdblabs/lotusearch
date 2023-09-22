@@ -2,8 +2,9 @@ package words
 
 import (
 	"embed"
-	"github.com/sea-team/gofound/searcher/utils"
 	"strings"
+
+	"github.com/sea-team/gofound/searcher/utils"
 
 	"github.com/wangbin/jiebago"
 )
@@ -14,9 +15,10 @@ var (
 )
 
 type Tokenizer struct {
-	seg jiebago.Segmenter
+	seg jiebago.Segmenter // TODO: maybe we can replace this pkg by github.com/go-ego/gse
 }
 
+// NewTokenizer Create a new Tokenizer(also Segmented) to split words
 func NewTokenizer(dictionaryPath string) *Tokenizer {
 	file, err := dictionaryFS.Open("data/dictionary.txt")
 	if err != nil {
@@ -35,11 +37,11 @@ func NewTokenizer(dictionaryPath string) *Tokenizer {
 }
 
 func (t *Tokenizer) Cut(text string) []string {
-	//不区分大小写
+	// 不区分大小写
 	text = strings.ToLower(text)
-	//移除所有的标点符号
+	// 移除所有的标点符号
 	text = utils.RemovePunctuation(text)
-	//移除所有的空格
+	// 移除所有的空格
 	text = utils.RemoveSpace(text)
 
 	var wordMap = make(map[string]struct{})
@@ -53,7 +55,7 @@ func (t *Tokenizer) Cut(text string) []string {
 		}
 		_, found := wordMap[w]
 		if !found {
-			//去除重复的词
+			// 去除重复的词
 			wordMap[w] = struct{}{}
 			wordsSlice = append(wordsSlice, w)
 		}

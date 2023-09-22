@@ -3,21 +3,20 @@ package core
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	// _ "net/http/pprof"
+	"os"
+	"os/signal"
+	// "runtime"
+	"syscall"
+	"time"
+
 	"github.com/sea-team/gofound/global"
 	"github.com/sea-team/gofound/searcher"
 	"github.com/sea-team/gofound/searcher/words"
 	"github.com/sea-team/gofound/web/controller"
 	"github.com/sea-team/gofound/web/router"
-	"log"
-	"net/http"
-
-	//_ "net/http/pprof"
-	"os"
-	"os/signal"
-
-	//"runtime"
-	"syscall"
-	"time"
 )
 
 // NewContainer 创建一个容器
@@ -44,15 +43,15 @@ func NewTokenizer(dictionaryPath string) *words.Tokenizer {
 // Initialize 初始化
 func Initialize() {
 
-	//runtime.SetMutexProfileFraction(1) // 开启对锁调用的跟踪
-	//runtime.SetBlockProfileRate(1)     // 开启对阻塞操作的跟踪
+	// runtime.SetMutexProfileFraction(1) // 开启对锁调用的跟踪
+	// runtime.SetBlockProfileRate(1)     // 开启对阻塞操作的跟踪
 
-	//go func() { http.ListenAndServe("0.0.0.0:6060", nil) }()
+	// go func() { http.ListenAndServe("0.0.0.0:6060", nil) }()
 
 	global.CONFIG = Parser()
 
 	if !global.CONFIG.Debug {
-		log.SetOutput(os.Stdout) //将记录器的输出设置为os.Stdout
+		log.SetOutput(os.Stdout) // 将记录器的输出设置为os.Stdout
 	}
 
 	defer func() {
@@ -62,7 +61,7 @@ func Initialize() {
 		}
 	}()
 
-	//初始化分词器
+	// 初始化分词器
 	tokenizer := NewTokenizer(global.CONFIG.Dictionary)
 	global.Container = NewContainer(tokenizer)
 

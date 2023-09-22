@@ -1,8 +1,9 @@
 package controller
 
 import (
-	"github.com/sea-team/gofound/searcher/model"
 	"strings"
+
+	"github.com/sea-team/gofound/searcher/model"
 
 	"github.com/gin-gonic/gin"
 )

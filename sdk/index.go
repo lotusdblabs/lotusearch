@@ -2,6 +2,7 @@ package gofound
 
 import (
 	"errors"
+
 	"github.com/sea-team/gofound/searcher/model"
 )
 
