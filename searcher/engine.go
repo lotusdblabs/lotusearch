@@ -367,7 +367,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) (*model.SearchResult,
 		Order:   request.Order,
 	}
 
-	_time := utils.ExecTime(func() {
+	_time := utils.ExecTimeWithNanoseconds(func() {
 
 		base := len(words)
 		wg := &sync.WaitGroup{}
