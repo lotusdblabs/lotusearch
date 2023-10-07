@@ -19,3 +19,11 @@ func TestExecTimeWithError(t *testing.T){
 	assert.Equal(t,fmt.Errorf("error handle function"),err)
 }
 
+func TestEncoder(t *testing.T){
+	// todo
+}
+
+func TestDecoder(t *testing.T){
+	// todo
+}
+

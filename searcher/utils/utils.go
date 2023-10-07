@@ -23,29 +23,26 @@ func ExecTimeWithError(fn func() error) (float64, error) {
 	return float64(time.Since(start).Nanoseconds()) / 1e6, err
 }
 
-func Encoder(data interface{}) []byte {
+func Encoder(data interface{}) ([]byte,error) {
 	if data == nil {
-		return nil
+		return nil,nil
 	}
+
 	buffer := new(bytes.Buffer)
 	encoder := gob.NewEncoder(buffer)
 	err := encoder.Encode(data)
-	if err != nil {
-		panic(err)
-	}
-	return buffer.Bytes()
+
+	return buffer.Bytes(),err
 }
 
-func Decoder(data []byte, v interface{}) {
+func Decoder(data []byte, v interface{}) error {
 	if data == nil {
-		return
+		return nil
 	}
 	buffer := bytes.NewBuffer(data)
 	decoder := gob.NewDecoder(buffer)
 	err := decoder.Decode(v)
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
 
 const (
