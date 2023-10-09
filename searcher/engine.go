@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Knetic/govaluate"
@@ -67,7 +68,7 @@ func (e *Engine) Init() {
 		e.Timeout = 10 * 3 // 默认30s
 	}
 	//-1代表没有初始化
-	e.documentCount = -1
+	atomic.AddInt64(&e.documentCount,-1)
 	//log.Println("数据存储目录：", e.IndexPath)
 	log.Println("chain num:", e.Shard*e.BufferNum)
 
@@ -121,7 +122,7 @@ func (e *Engine) automaticGC() {
 
 func (e *Engine) IndexDocument(doc *model.IndexDoc) error {
 	//数量增加
-	e.documentCount++
+	atomic.AddInt64(&e.documentCount,1)
 	e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc
 	return nil
 	/*
@@ -563,7 +564,8 @@ func (e *Engine) GetIndexCount() int64 {
 
 // GetDocumentCount 获取文档数量
 func (e *Engine) GetDocumentCount() int64 {
-	if e.documentCount == -1 {
+	documentCount:= atomic.LoadInt64(&e.documentCount)
+	if documentCount == -1 {
 		var (
 			count int64
 			mtx sync.Mutex
@@ -585,10 +587,11 @@ func (e *Engine) GetDocumentCount() int64 {
 			}(i)
 		}
 		wg.Wait()
-		e.documentCount = count
+		atomic.SwapInt64(&e.documentCount,count)
 	}
 
-	return e.documentCount
+
+	return atomic.LoadInt64(&e.documentCount)
 }
 
 // GetDocById 通过id获取文档
@@ -643,7 +646,7 @@ func (e *Engine) RemoveIndex(id uint32) error {
 		return err
 	}
 	//减少数量
-	e.documentCount--
+	atomic.AddInt64(&e.documentCount,-1)
 
 	return nil
 }
