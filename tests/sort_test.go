@@ -33,14 +33,14 @@ func TestSort(t *testing.T) {
 	var data4 = make([]int, len(data))
 	copy(data4, data)
 
-	_time := utils.ExecTime(func() {
+	_time := utils.ExecTimeWithNanoseconds(func() {
 		BubbleSort(data1)
 	})
 	fmt.Println("冒泡排序耗时：", _time)
 	//fmt.Println("data1", data1)
 	//快速排序
 
-	_time = utils.ExecTime(func() {
+	_time = utils.ExecTimeWithNanoseconds(func() {
 		//QuickSortAsc(data2, 0, len(data2)-1)
 		utils.QuickSortAsc(data2, 0, len(data2)-1, func(i int, j int) {
 			//log.Println(i, j)
@@ -50,13 +50,13 @@ func TestSort(t *testing.T) {
 	fmt.Println("快速排序耗时：", _time)
 	//fmt.Println("data2", data2)
 
-	_time = utils.ExecTime(func() {
+	_time = utils.ExecTimeWithNanoseconds(func() {
 		SelectSort(data3)
 	})
 	fmt.Println("选择排序耗时：", _time)
 	//fmt.Println("data3", data3)
 
-	_time = utils.ExecTime(func() {
+	_time = utils.ExecTimeWithNanoseconds(func() {
 		InsertSort(data4)
 	})
 	fmt.Println("插入排序耗时：", _time)
@@ -152,7 +152,7 @@ func TestFastSort(t *testing.T) {
 
 	}
 
-	_time := utils.ExecTime(func() {
+	_time := utils.ExecTimeWithNanoseconds(func() {
 		//utils.QuickSortDesc(data, 0, len(data)-1, func(i int, j int) {
 
 		//})
@@ -229,13 +229,13 @@ func TestFind(t *testing.T) {
 		data2 = append(data2, val)
 	}
 
-	t1 := utils.ExecTime(func() {
+	t1 := utils.ExecTimeWithNanoseconds(func() {
 		sort.Sort(sort.IntSlice(data))
 	})
 	fmt.Println("快排用时", t1)
 
 	//fmt.Println(find(data, 1))
-	t2 := utils.ExecTime(func() {
+	t2 := utils.ExecTimeWithNanoseconds(func() {
 		BucketSort(data2)
 		for i, j := 0, len(data2)-1; i < j; i, j = i+1, j-1 {
 			data2[i], data2[j] = data2[j], data2[i]
@@ -272,7 +272,7 @@ func TestMerge(t *testing.T) {
 		data2 = append(data2, uint32(v))
 	}
 
-	t1 := utils.ExecTime(func() {
+	t1 := utils.ExecTimeWithNanoseconds(func() {
 		temp := make([]uint32, 0)
 		for _, v := range data1 {
 			if found, _ := find(temp, v); found {
@@ -284,7 +284,7 @@ func TestMerge(t *testing.T) {
 
 	fmt.Println("二分法去重", t1)
 
-	t2 := utils.ExecTime(func() {
+	t2 := utils.ExecTimeWithNanoseconds(func() {
 		temp := make(map[uint32]bool, len(data2))
 		d := make([]uint32, 0)
 		for _, val := range data2 {
