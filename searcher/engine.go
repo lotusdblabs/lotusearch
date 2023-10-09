@@ -233,14 +233,20 @@ func (e *Engine) addInvertedIndex(word string, id uint32) {
 	buf, find := s.Get(key)
 	ids := make([]uint32, 0)
 	if find {
-		utils.Decoder(buf, &ids)
+		if err := utils.Decoder(buf, &ids);err != nil {
+			log.Println("Decoder has err:",err)
+		}
 	}
 
 	if !arrays.ArrayUint32Exists(ids, id) {
 		ids = append(ids, id)
 	}
+	encodeByte,err := utils.Encoder(ids)
+	if err != nil {
+		log.Println("Encoder has err:",err)
+	}
 
-	s.Set(key, utils.Encoder(ids))
+	s.Set(key,encodeByte)
 }
 
 // 移除删去的词
@@ -274,7 +280,9 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 	buf, found := wordStorage.Get(key)
 	if found {
 		ids := make([]uint32, 0)
-		utils.Decoder(buf, &ids)
+		if err := utils.Decoder(buf, &ids);err != nil {
+			log.Println("Decoder has err:",err)
+		}
 
 		//移除
 		index := arrays.Find(ids, id)
@@ -286,7 +294,11 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 					panic(err)
 				}
 			} else {
-				wordStorage.Set(key, utils.Encoder(ids))
+				encodeByte,err := utils.Encoder(ids)
+				if err != nil {
+					log.Println("Encoder has err:",err)
+				}
+				wordStorage.Set(key, encodeByte)
 			}
 		}
 	}
@@ -303,7 +315,9 @@ func (e *Engine) getDifference(id uint32, newWords []string) ([]string, []string
 	buf, found := wordStorage.Get(key)
 	if found {
 		oldWords := make([]string, 0)
-		utils.Decoder(buf, &oldWords)
+		if err := utils.Decoder(buf, &oldWords);err != nil {
+			log.Println("Decoder has err:",err)
+		}
 
 		// 计算需要移除的
 		removes := make([]string, 0)
@@ -348,10 +362,18 @@ func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
 	}
 
 	//存储id和key以及文档的映射
-	docStorage.Set(key, utils.Encoder(doc))
+	encodeByte,err := utils.Encoder(doc)
+	if err != nil {
+		log.Println("encode has err:",err)
+	}
+	docStorage.Set(key, encodeByte)
 
 	//设置到id和key的映射中
-	positiveIndexStorage.Set(key, utils.Encoder(keys))
+	encodeByteOfKeys,errs:= utils.Encoder(keys)
+	if errs != nil {
+		log.Println("encode has err:",errs)
+	}
+	positiveIndexStorage.Set(key, encodeByteOfKeys)
 }
 
 // MultiSearch 多线程搜索
@@ -481,7 +503,10 @@ func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, reque
 	if buf != nil {
 		//gob解析
 		storageDoc := new(model.StorageIndexDoc)
-		utils.Decoder(buf, &storageDoc)
+		if err := utils.Decoder(buf, &storageDoc);err != nil {
+			log.Println("Decoder has err:",err)
+		}
+
 		doc.Document = storageDoc.Document
 		doc.Keys = storageDoc.Keys
 		text := storageDoc.Text
@@ -518,7 +543,10 @@ func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *syn
 	if find {
 		ids := make([]uint32, 0)
 		//解码
-		utils.Decoder(buf, &ids)
+		if err := utils.Decoder(buf, &ids);err != nil {
+			log.Println("Decoder has err:",err)
+		}
+
 		fastSort.Add(&ids)
 	}
 
@@ -594,7 +622,9 @@ func (e *Engine) RemoveIndex(id uint32) error {
 	}
 
 	keys := make([]string, 0)
-	utils.Decoder(keysValue, &keys)
+	if err := utils.Decoder(keysValue, &keys);err != nil {
+		log.Println("Decoder has err:",err)
+	}
 
 	//符合条件的key，要移除id
 	for _, word := range keys {
