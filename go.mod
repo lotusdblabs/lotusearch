@@ -7,6 +7,7 @@ require (
 	github.com/emirpasic/gods v1.12.0
 	github.com/gin-contrib/gzip v0.0.5
 	github.com/gin-gonic/gin v1.7.7
+	github.com/go-playground/assert/v2 v2.0.1
 	github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46
 	github.com/shirou/gopsutil/v3 v3.23.7
 	github.com/syndtr/goleveldb v1.0.0
