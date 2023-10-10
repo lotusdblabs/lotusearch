@@ -22,7 +22,7 @@ func TestLeveldb(t *testing.T) {
 	//	}
 	// })
 	// fmt.Println("leveldb put 1000:", _time)
-	db.Put([]byte("1"), []byte("1"), nil)
+	_ = db.Put([]byte("1"), []byte("1"), nil)
 	value, err := db.Get([]byte("1"), nil)
 	fmt.Println(string(value), err)
 }

@@ -2,15 +2,19 @@ package tests
 
 import (
 	"fmt"
-	"github.com/wangbin/jiebago"
 	"strings"
 	"testing"
+
+	"github.com/wangbin/jiebago"
 )
 
 func TestWord(t *testing.T) {
 	var seg jiebago.Segmenter
 
-	seg.LoadDictionary("/Users/panjing/GolandProjects/github.com/sea-team/gofound/data/dictionary.txt")
+	err := seg.LoadDictionary("/Users/panjing/GolandProjects/github.com/sea-team/gofound/data/dictionary.txt")
+	if err != nil {
+		fmt.Println(err)
+	}
 	r := seg.CutForSearch("想在西安买房投资，哪个区域比较好，最好有具体楼盘？", true)
 	words := make([]string, 0)
 	for {
