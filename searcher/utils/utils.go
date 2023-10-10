@@ -11,43 +11,38 @@ import (
 	"time"
 )
 
-func ExecTime(fn func()) float64 {
+func ExecTimeWithNanoseconds(fn func()) float64 {
 	start := time.Now()
 	fn()
-	tc := float64(time.Since(start).Nanoseconds())
-	return tc / 1e6
+	return float64(time.Since(start).Nanoseconds()) / 1e6
 }
 
 func ExecTimeWithError(fn func() error) (float64, error) {
 	start := time.Now()
 	err := fn()
-	tc := float64(time.Since(start).Nanoseconds())
-	return tc / 1e6, err
+	return float64(time.Since(start).Nanoseconds()) / 1e6, err
 }
 
-func Encoder(data interface{}) []byte {
+func Encoder(data interface{}) ([]byte,error) {
 	if data == nil {
-		return nil
+		return nil,nil
 	}
+
 	buffer := new(bytes.Buffer)
 	encoder := gob.NewEncoder(buffer)
 	err := encoder.Encode(data)
-	if err != nil {
-		panic(err)
-	}
-	return buffer.Bytes()
+
+	return buffer.Bytes(),err
 }
 
-func Decoder(data []byte, v interface{}) {
+func Decoder(data []byte, v interface{}) error {
 	if data == nil {
-		return
+		return nil
 	}
 	buffer := bytes.NewBuffer(data)
 	decoder := gob.NewDecoder(buffer)
 	err := decoder.Decode(v)
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
 
 const (

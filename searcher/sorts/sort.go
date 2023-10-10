@@ -42,7 +42,7 @@ func (e *IdSort) GetAll(order string) []uint32 {
 	scores := make([]int, 0)
 	ids := make([]uint32, 0)
 	it := e.Tree.Iterator()
-	_tt := utils.ExecTime(func() {
+	_tt := utils.ExecTimeWithNanoseconds(func() {
 		for it.Next() {
 			scores = append(scores, it.Value().(int))
 			ids = append(ids, it.Key().(uint32))
@@ -50,7 +50,7 @@ func (e *IdSort) GetAll(order string) []uint32 {
 	})
 	log.Println("迭代耗时:", _tt)
 
-	_t := utils.ExecTime(func() {
+	_t := utils.ExecTimeWithNanoseconds(func() {
 		// ids 降序
 		if order == consts.SearchOrderDesc {
 			for i, j := 0, len(ids)-1; i < j; i, j = i+1, j-1 {
@@ -61,7 +61,7 @@ func (e *IdSort) GetAll(order string) []uint32 {
 	})
 	log.Println("id排序耗时:", _t)
 
-	_t = utils.ExecTime(func() {
+	_t = utils.ExecTimeWithNanoseconds(func() {
 		// 排序，得分越高 排越前
 		for i := 0; i < len(scores); i++ {
 			for j := i + 1; j < len(scores); j++ {
