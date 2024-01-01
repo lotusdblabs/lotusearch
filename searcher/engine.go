@@ -51,9 +51,7 @@ type Option struct {
 }
 
 func NewEngine() *Engine {
-	return &Engine{
-
-	}
+	return &Engine{}
 }
 
 // Init 初始化索引引擎
@@ -68,7 +66,7 @@ func (e *Engine) Init() {
 		e.Timeout = 10 * 3 // 默认30s
 	}
 	//-1代表没有初始化
-	atomic.AddInt64(&e.documentCount,-1)
+	atomic.AddInt64(&e.documentCount, -1)
 	//log.Println("数据存储目录：", e.IndexPath)
 	log.Println("chain num:", e.Shard*e.BufferNum)
 
@@ -122,7 +120,7 @@ func (e *Engine) automaticGC() {
 
 func (e *Engine) IndexDocument(doc *model.IndexDoc) error {
 	//数量增加
-	atomic.AddInt64(&e.documentCount,1)
+	atomic.AddInt64(&e.documentCount, 1)
 	e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc
 	return nil
 	/*
@@ -234,20 +232,20 @@ func (e *Engine) addInvertedIndex(word string, id uint32) {
 	buf, find := s.Get(key)
 	ids := make([]uint32, 0)
 	if find {
-		if err := utils.Decoder(buf, &ids);err != nil {
-			log.Println("Decoder has err:",err)
+		if err := utils.Decoder(buf, &ids); err != nil {
+			log.Println("Decoder has err:", err)
 		}
 	}
 
 	if !arrays.ArrayUint32Exists(ids, id) {
 		ids = append(ids, id)
 	}
-	encodeByte,err := utils.Encoder(ids)
+	encodeByte, err := utils.Encoder(ids)
 	if err != nil {
-		log.Println("Encoder has err:",err)
+		log.Println("Encoder has err:", err)
 	}
 
-	s.Set(key,encodeByte)
+	s.Set(key, encodeByte)
 }
 
 // 移除删去的词
@@ -262,14 +260,17 @@ func (e *Engine) optimizeIndex(id uint32, newWords []string) ([]string, bool) {
 		if removes != nil && len(removes) > 0 {
 			// 移除正排索引
 			for _, word := range removes {
-				e.removeIdInWordIndex(id, word)
+				if err := e.removeIdInWordIndex(id, word); err != nil {
+					// todo deal with remove index error
+					continue
+				}
 			}
 		}
 	}
 	return inserts, changed
 }
 
-func (e *Engine) removeIdInWordIndex(id uint32, word string) {
+func (e *Engine) removeIdInWordIndex(id uint32, word string) (err error) {
 
 	shard := e.getShardByWord(word)
 
@@ -281,8 +282,9 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 	buf, found := wordStorage.Get(key)
 	if found {
 		ids := make([]uint32, 0)
-		if err := utils.Decoder(buf, &ids);err != nil {
-			log.Println("Decoder has err:",err)
+		if err := utils.Decoder(buf, &ids); err != nil {
+			log.Println("Decoder has err:", err)
+			return err
 		}
 
 		//移除
@@ -292,18 +294,20 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 			if len(ids) == 0 {
 				err := wordStorage.Delete(key)
 				if err != nil {
-					panic(err)
+					log.Println("Encoder has err:", err)
+					return err
 				}
 			} else {
-				encodeByte,err := utils.Encoder(ids)
+				encodeByte, err := utils.Encoder(ids)
 				if err != nil {
-					log.Println("Encoder has err:",err)
+					log.Println("Encoder has err:", err)
 				}
 				wordStorage.Set(key, encodeByte)
 			}
 		}
-	}
 
+	}
+	return err
 }
 
 // 计算差值
@@ -316,8 +320,8 @@ func (e *Engine) getDifference(id uint32, newWords []string) ([]string, []string
 	buf, found := wordStorage.Get(key)
 	if found {
 		oldWords := make([]string, 0)
-		if err := utils.Decoder(buf, &oldWords);err != nil {
-			log.Println("Decoder has err:",err)
+		if err := utils.Decoder(buf, &oldWords); err != nil {
+			log.Println("Decoder has err:", err)
 		}
 
 		// 计算需要移除的
@@ -363,16 +367,16 @@ func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
 	}
 
 	//存储id和key以及文档的映射
-	encodeByte,err := utils.Encoder(doc)
+	encodeByte, err := utils.Encoder(doc)
 	if err != nil {
-		log.Println("encode has err:",err)
+		log.Println("encode has err:", err)
 	}
 	docStorage.Set(key, encodeByte)
 
 	//设置到id和key的映射中
-	encodeByteOfKeys,errs:= utils.Encoder(keys)
+	encodeByteOfKeys, errs := utils.Encoder(keys)
 	if errs != nil {
-		log.Println("encode has err:",errs)
+		log.Println("encode has err:", errs)
 	}
 	positiveIndexStorage.Set(key, encodeByteOfKeys)
 }
@@ -504,8 +508,8 @@ func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, reque
 	if buf != nil {
 		//gob解析
 		storageDoc := new(model.StorageIndexDoc)
-		if err := utils.Decoder(buf, &storageDoc);err != nil {
-			log.Println("Decoder has err:",err)
+		if err := utils.Decoder(buf, &storageDoc); err != nil {
+			log.Println("Decoder has err:", err)
 		}
 
 		doc.Document = storageDoc.Document
@@ -544,8 +548,8 @@ func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *syn
 	if find {
 		ids := make([]uint32, 0)
 		//解码
-		if err := utils.Decoder(buf, &ids);err != nil {
-			log.Println("Decoder has err:",err)
+		if err := utils.Decoder(buf, &ids); err != nil {
+			log.Println("Decoder has err:", err)
 		}
 
 		fastSort.Add(&ids)
@@ -564,11 +568,11 @@ func (e *Engine) GetIndexCount() int64 {
 
 // GetDocumentCount 获取文档数量
 func (e *Engine) GetDocumentCount() int64 {
-	documentCount:= atomic.LoadInt64(&e.documentCount)
+	documentCount := atomic.LoadInt64(&e.documentCount)
 	if documentCount == -1 {
 		var (
 			count int64
-			mtx sync.Mutex
+			mtx   sync.Mutex
 		)
 		//使用多线程加速统计
 		// todo faster Implementation plan for Quick calculations and quantity statistics
@@ -587,9 +591,8 @@ func (e *Engine) GetDocumentCount() int64 {
 			}(i)
 		}
 		wg.Wait()
-		atomic.SwapInt64(&e.documentCount,count)
+		atomic.SwapInt64(&e.documentCount, count)
 	}
-
 
 	return atomic.LoadInt64(&e.documentCount)
 }
@@ -625,13 +628,16 @@ func (e *Engine) RemoveIndex(id uint32) error {
 	}
 
 	keys := make([]string, 0)
-	if err := utils.Decoder(keysValue, &keys);err != nil {
-		log.Println("Decoder has err:",err)
+	if err := utils.Decoder(keysValue, &keys); err != nil {
+		log.Println("Decoder has err:", err)
 	}
 
 	//符合条件的key，要移除id
 	for _, word := range keys {
-		e.removeIdInWordIndex(id, word)
+		if err := e.removeIdInWordIndex(id, word); err != nil {
+			// todo deal with error
+			continue
+		}
 	}
 
 	//删除id映射
@@ -646,7 +652,7 @@ func (e *Engine) RemoveIndex(id uint32) error {
 		return err
 	}
 	//减少数量
-	atomic.AddInt64(&e.documentCount,-1)
+	atomic.AddInt64(&e.documentCount, -1)
 
 	return nil
 }
