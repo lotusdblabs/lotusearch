@@ -1,11 +1,13 @@
 package admin
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/sea-team/gofound/web/admin/assets"
 	"net/http"
 	"net/url"
 	"os"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/sea-team/gofound/web/admin/assets"
 )
 
 func adminIndex(ctx *gin.Context) {
@@ -24,7 +26,7 @@ func handlerStatic(c *gin.Context) {
 }
 
 func Register(router *gin.Engine, handlers ...gin.HandlerFunc) {
-	//注册路由
+	// 注册路由
 	r := router.Group("/admin", handlers...)
 	r.GET("/", adminIndex)
 	router.GET("/assets/*filepath", handlerStatic)

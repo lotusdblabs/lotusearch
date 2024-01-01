@@ -1,9 +1,10 @@
 package system
 
 import (
-	"github.com/shirou/gopsutil/v3/cpu"
 	"runtime"
 	"time"
+
+	"github.com/shirou/gopsutil/v3/cpu"
 )
 
 type CPUStatus struct {

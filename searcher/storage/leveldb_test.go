@@ -2,8 +2,10 @@ package storage
 
 import (
 	"fmt"
-	"github.com/syndtr/goleveldb/leveldb"
 	"testing"
+	"time"
+
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func TestLeveldb(t *testing.T) {
@@ -13,14 +15,19 @@ func TestLeveldb(t *testing.T) {
 	}
 	defer db.Close()
 
-	//_time := utils.ExecTime(func() {
+	// _time := utils.ExecTime(func() {
 	//
 	//	for i := 0; i < 10000; i++ {
 	//		db.Put([]byte(strconv.Itoa(i)), []byte(strconv.Itoa(i)), nil)
 	//	}
-	//})
-	//fmt.Println("leveldb put 1000:", _time)
-	db.Put([]byte("1"), []byte("1"), nil)
+	// })
+	// fmt.Println("leveldb put 1000:", _time)
+	_ = db.Put([]byte("1"), []byte("1"), nil)
 	value, err := db.Get([]byte("1"), nil)
 	fmt.Println(string(value), err)
+}
+
+func TestTimeDuration(t *testing.T) {
+	fmt.Println(time.Duration(5) * time.Second)
+	fmt.Println(5 * time.Second)
 }

@@ -1,10 +1,13 @@
 package sorts
 
 import (
-	"github.com/emirpasic/gods/trees/avltree"
-	"github.com/sea-team/gofound/searcher/utils"
 	"log"
 	"sync"
+
+	"github.com/emirpasic/gods/trees/avltree"
+
+	"github.com/sea-team/gofound/searcher/consts"
+	"github.com/sea-team/gofound/searcher/utils"
 )
 
 // IdSort 二叉树对id 进行打分和排序
@@ -48,8 +51,8 @@ func (e *IdSort) GetAll(order string) []uint32 {
 	log.Println("迭代耗时:", _tt)
 
 	_t := utils.ExecTimeWithNanoseconds(func() {
-		//ids 降序
-		if order == "desc" {
+		// ids 降序
+		if order == consts.SearchOrderDesc {
 			for i, j := 0, len(ids)-1; i < j; i, j = i+1, j-1 {
 				ids[i], ids[j] = ids[j], ids[i]
 				scores[i], scores[j] = scores[j], scores[i]

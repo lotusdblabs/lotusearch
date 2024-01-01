@@ -2,13 +2,6 @@ package searcher
 
 import (
 	"fmt"
-	"github.com/sea-team/gofound/searcher/arrays"
-	"github.com/sea-team/gofound/searcher/model"
-	"github.com/sea-team/gofound/searcher/pagination"
-	"github.com/sea-team/gofound/searcher/sorts"
-	"github.com/sea-team/gofound/searcher/storage"
-	"github.com/sea-team/gofound/searcher/utils"
-	"github.com/sea-team/gofound/searcher/words"
 	"log"
 	"os"
 	"runtime"
@@ -18,36 +11,44 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/sea-team/gofound/searcher/arrays"
+	"github.com/sea-team/gofound/searcher/model"
+	"github.com/sea-team/gofound/searcher/pagination"
+	"github.com/sea-team/gofound/searcher/sorts"
+	"github.com/sea-team/gofound/searcher/storage"
+	"github.com/sea-team/gofound/searcher/utils"
+	"github.com/sea-team/gofound/searcher/words"
+
 	"github.com/Knetic/govaluate"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 type Engine struct {
-	IndexPath string  //索引文件存储目录
-	Option    *Option //配置
+	IndexPath string  // 索引文件存储目录
+	Option    *Option // 配置
 
-	invertedIndexStorages []*storage.LeveldbStorage //关键字和Id映射，倒排索引,key=id,value=[]words
-	positiveIndexStorages []*storage.LeveldbStorage //ID和key映射，用于计算相关度，一个id 对应多个key，正排索引
-	docStorages           []*storage.LeveldbStorage //文档仓
+	invertedIndexStorages []*storage.LeveldbStorage // 关键字和Id映射，倒排索引,key=id,value=[]words
+	positiveIndexStorages []*storage.LeveldbStorage // ID和key映射，用于计算相关度，一个id 对应多个key，正排索引
+	docStorages           []*storage.LeveldbStorage // 文档仓
 
-	sync.Mutex                                   //锁
-	sync.WaitGroup                               //等待
-	addDocumentWorkerChan []chan *model.IndexDoc //添加索引的通道
-	IsDebug               bool                   //是否调试模式
-	Tokenizer             *words.Tokenizer       //分词器
-	DatabaseName          string                 //数据库名
+	sync.Mutex                                   // 锁
+	sync.WaitGroup                               // 等待
+	addDocumentWorkerChan []chan *model.IndexDoc // 添加索引的通道
+	IsDebug               bool                   // 是否调试模式
+	Tokenizer             *words.Tokenizer       // 分词器
+	DatabaseName          string                 // 数据库名
 
-	Shard     int   //分片数
-	Timeout   int64 //超时时间,单位秒
-	BufferNum int   //分片缓冲数
+	Shard     int   // 分片数
+	Timeout   int64 // 超时时间,单位秒
+	BufferNum int   // 分片缓冲数
 
-	documentCount int64 //文档总数量
+	documentCount int64 // 文档总数量
 }
 
 type Option struct {
-	InvertedIndexName string //倒排索引
-	PositiveIndexName string //正排索引
-	DocIndexName      string //文档存储
+	InvertedIndexName string // 倒排索引
+	PositiveIndexName string // 正排索引
+	DocIndexName      string // 文档存储
 }
 
 func NewEngine() *Engine {
@@ -65,20 +66,22 @@ func (e *Engine) Init() {
 	if e.Timeout == 0 {
 		e.Timeout = 10 * 3 // 默认30s
 	}
+
 	//-1代表没有初始化
 	atomic.AddInt64(&e.documentCount, -1)
 	//log.Println("数据存储目录：", e.IndexPath)
+
 	log.Println("chain num:", e.Shard*e.BufferNum)
 
 	e.addDocumentWorkerChan = make([]chan *model.IndexDoc, e.Shard)
-	//初始化文件存储
+	// 初始化文件存储
 	for shard := 0; shard < e.Shard; shard++ {
 
-		//初始化chan
+		// 初始化chan
 		worker := make(chan *model.IndexDoc, e.BufferNum)
 		e.addDocumentWorkerChan[shard] = worker
 
-		//初始化chan
+		// 初始化chan
 		go e.DocumentWorkerExec(worker)
 
 		s, err := storage.NewStorage(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.DocIndexName, shard)), e.Timeout)
@@ -87,14 +90,14 @@ func (e *Engine) Init() {
 		}
 		e.docStorages = append(e.docStorages, s)
 
-		//初始化Keys存储
+		// 初始化Keys存储
 		ks, kerr := storage.NewStorage(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.InvertedIndexName, shard)), e.Timeout)
 		if kerr != nil {
 			panic(err)
 		}
 		e.invertedIndexStorages = append(e.invertedIndexStorages, ks)
 
-		//id和keys映射
+		// id和keys映射
 		iks, ikerr := storage.NewStorage(e.getFilePath(fmt.Sprintf("%s_%d", e.Option.PositiveIndexName, shard)), e.Timeout)
 		if ikerr != nil {
 			panic(ikerr)
@@ -102,7 +105,7 @@ func (e *Engine) Init() {
 		e.positiveIndexStorages = append(e.positiveIndexStorages, iks)
 	}
 	go e.automaticGC()
-	//log.Println("初始化完成")
+	// log.Println("初始化完成")
 }
 
 // 自动保存索引，10秒钟检测一次
@@ -110,7 +113,7 @@ func (e *Engine) automaticGC() {
 	ticker := time.NewTicker(time.Second * 10)
 	for {
 		<-ticker.C
-		//定时GC
+		// 定时GC
 		runtime.GC()
 		if e.IsDebug {
 			log.Println("waiting:", e.GetQueue())
@@ -164,18 +167,18 @@ func (e *Engine) getShardByWord(word string) int {
 func (e *Engine) InitOption(option *Option) {
 
 	if option == nil {
-		//默认值
+		// 默认值
 		option = e.GetOptions()
 	}
 	e.Option = option
-	//shard默认值
+	// shard默认值
 	if e.Shard <= 0 {
 		e.Shard = 10
 	}
 	if e.BufferNum <= 0 {
 		e.BufferNum = 1000
 	}
-	//初始化其他的
+	// 初始化其他的
 	e.Init()
 
 }
@@ -194,7 +197,7 @@ func (e *Engine) GetOptions() *Option {
 
 // AddDocument 分词索引
 func (e *Engine) AddDocument(index *model.IndexDoc) {
-	//等待初始化完成
+	// 等待初始化完成
 	e.Wait()
 	text := index.Text
 
@@ -224,11 +227,11 @@ func (e *Engine) addInvertedIndex(word string, id uint32) {
 
 	s := e.invertedIndexStorages[shard]
 
-	//string作为key
+	// string作为key
 	key := []byte(word)
 
-	//存在
-	//添加到列表
+	// 存在
+	// 添加到列表
 	buf, find := s.Get(key)
 	ids := make([]uint32, 0)
 	if find {
@@ -276,7 +279,7 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) (err error) {
 
 	wordStorage := e.invertedIndexStorages[shard]
 
-	//string作为key
+	// string作为key
 	key := []byte(word)
 
 	buf, found := wordStorage.Get(key)
@@ -287,7 +290,7 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) (err error) {
 			return err
 		}
 
-		//移除
+		// 移除
 		index := arrays.Find(ids, id)
 		if index != -1 {
 			ids = utils.DeleteArray(ids, index)
@@ -358,7 +361,7 @@ func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
 	shard := e.getShard(index.Id)
 	docStorage := e.docStorages[shard]
 
-	//id和key的映射
+	// id和key的映射
 	positiveIndexStorage := e.positiveIndexStorages[shard]
 
 	doc := &model.StorageIndexDoc{
@@ -383,10 +386,10 @@ func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
 
 // MultiSearch 多线程搜索
 func (e *Engine) MultiSearch(request *model.SearchRequest) (*model.SearchResult, error) {
-	//等待搜索初始化完成
+	// 等待搜索初始化完成
 	e.Wait()
 
-	//分词搜索
+	// 分词搜索
 	words := e.Tokenizer.Cut(request.Query)
 
 	fastSort := &sorts.FastSort{
@@ -411,7 +414,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) (*model.SearchResult,
 	// 处理分页
 	request = request.GetAndSetDefault()
 
-	//计算交集得分和去重
+	// 计算交集得分和去重
 	fastSort.Process()
 
 	wordMap := make(map[string]bool)
@@ -419,7 +422,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) (*model.SearchResult,
 		wordMap[word] = true
 	}
 
-	//读取文档
+	// 读取文档
 	var result = &model.SearchResult{
 		Total: fastSort.Count(),
 		Page:  request.Page,
@@ -432,10 +435,10 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) (*model.SearchResult,
 		pager := new(pagination.Pagination)
 
 		pager.Init(request.Limit, fastSort.Count())
-		//设置总页数
+		// 设置总页数
 		result.PageCount = pager.PageCount
 
-		//读取单页的id
+		// 读取单页的id
 		if pager.PageCount != 0 {
 
 			start, end := pager.GetPage(request.Page)
@@ -450,7 +453,7 @@ func (e *Engine) MultiSearch(request *model.SearchRequest) (*model.SearchResult,
 			count := len(resultItems)
 
 			result.Documents = make([]model.ResponseDoc, count)
-			//只读取前面100个
+			// 只读取前面100个
 			wg := new(sync.WaitGroup)
 			wg.Add(count)
 			for index, item := range resultItems {
@@ -506,7 +509,7 @@ func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, reque
 	doc.Score = item.Score
 
 	if buf != nil {
-		//gob解析
+		// gob解析
 		storageDoc := new(model.StorageIndexDoc)
 		if err := utils.Decoder(buf, &storageDoc); err != nil {
 			log.Println("Decoder has err:", err)
@@ -515,18 +518,18 @@ func (e *Engine) getDocument(item model.SliceItem, doc *model.ResponseDoc, reque
 		doc.Document = storageDoc.Document
 		doc.Keys = storageDoc.Keys
 		text := storageDoc.Text
-		//处理关键词高亮
+		// 处理关键词高亮
 		highlight := request.Highlight
 		if highlight != nil {
-			//全部小写
+			// 全部小写
 			text = strings.ToLower(text)
-			//还可以优化，只替换击中的词
+			// 还可以优化，只替换击中的词
 			for _, key := range storageDoc.Keys {
 				if ok := (*wordMap)[key]; ok {
 					text = strings.ReplaceAll(text, key, fmt.Sprintf("%s%s%s", highlight.PreTag, key, highlight.PostTag))
 				}
 			}
-			//放置原始文本
+			// 放置原始文本
 			doc.OriginalText = storageDoc.Text
 		}
 		doc.Text = text
@@ -540,7 +543,7 @@ func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *syn
 	defer wg.Done()
 
 	shard := e.getShardByWord(word)
-	//读取id
+	// 读取id
 	invertedIndexStorage := e.invertedIndexStorages[shard]
 	key := []byte(word)
 
@@ -574,11 +577,11 @@ func (e *Engine) GetDocumentCount() int64 {
 			count int64
 			mtx   sync.Mutex
 		)
-		//使用多线程加速统计
+		// 使用多线程加速统计
 		// todo faster Implementation plan for Quick calculations and quantity statistics
 		wg := sync.WaitGroup{}
 		wg.Add(e.Shard)
-		//这里的统计可能会出现数据错误，因为没加锁
+		// 这里的统计可能会出现数据错误，因为没加锁
 		for i := 0; i < e.Shard; i++ {
 			go func(i int) {
 				mtx.Lock()
@@ -611,16 +614,16 @@ func (e *Engine) GetDocById(id uint32) []byte {
 
 // RemoveIndex 根据ID移除索引
 func (e *Engine) RemoveIndex(id uint32) error {
-	//移除
+	// 移除
 	e.Lock()
 	defer e.Unlock()
 
 	shard := e.getShard(id)
 	key := utils.Uint32ToBytes(id)
 
-	//关键字和Id映射
-	//invertedIndexStorages []*storage.LeveldbStorage
-	//ID和key映射，用于计算相关度，一个id 对应多个key
+	// 关键字和Id映射
+	// invertedIndexStorages []*storage.LeveldbStorage
+	// ID和key映射，用于计算相关度，一个id 对应多个key
 	ik := e.positiveIndexStorages[shard]
 	keysValue, found := ik.Get(key)
 	if !found {
@@ -632,7 +635,7 @@ func (e *Engine) RemoveIndex(id uint32) error {
 		log.Println("Decoder has err:", err)
 	}
 
-	//符合条件的key，要移除id
+	// 符合条件的key，要移除id
 	for _, word := range keys {
 		if err := e.removeIdInWordIndex(id, word); err != nil {
 			// todo deal with error
@@ -640,17 +643,18 @@ func (e *Engine) RemoveIndex(id uint32) error {
 		}
 	}
 
-	//删除id映射
+	// 删除id映射
 	err := ik.Delete(key)
 	if err != nil {
 		return errors.New(err.Error())
 	}
 
-	//文档仓
+	// 文档仓
 	err = e.docStorages[shard].Delete(key)
 	if err != nil {
 		return err
 	}
+
 	//减少数量
 	atomic.AddInt64(&e.documentCount, -1)
 
@@ -671,12 +675,12 @@ func (e *Engine) Close() {
 func (e *Engine) Drop() error {
 	e.Lock()
 	defer e.Unlock()
-	//删除文件
+	// 删除文件
 	if err := os.RemoveAll(e.IndexPath); err != nil {
 		return err
 	}
 
-	//清空内存
+	// 清空内存
 	for i := 0; i < e.Shard; i++ {
 		e.docStorages = make([]*storage.LeveldbStorage, 0)
 		e.invertedIndexStorages = make([]*storage.LeveldbStorage, 0)

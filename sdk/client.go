@@ -2,12 +2,13 @@ package gofound
 
 import (
 	"fmt"
-	"github.com/sea-team/gofound/core"
-	"github.com/sea-team/gofound/global"
-	"github.com/sea-team/gofound/searcher"
 	"os"
 	"runtime"
 	"sync"
+
+	"github.com/sea-team/gofound/core"
+	"github.com/sea-team/gofound/global"
+	"github.com/sea-team/gofound/searcher"
 )
 
 var once sync.Once
@@ -15,8 +16,8 @@ var once sync.Once
 // Client 应该对外部屏蔽细节
 // 尽量少的提供接口，但是又要保证功能性
 type Client struct {
-	config    *global.Config      //服务配置
-	container *searcher.Container //运行实体
+	config    *global.Config      // 服务配置
+	container *searcher.Container // 运行实体
 }
 
 func newDefaultConfig() *global.Config {
@@ -41,7 +42,7 @@ func newTokenizerAndContainer(config *global.Config) *searcher.Container {
 // NewClient 通过参数进行配置,必须指定全部参数
 func NewClient(config *global.Config) *Client {
 	global.CONFIG = config
-	//初始化分词器
+	// 初始化分词器
 	container := newTokenizerAndContainer(config)
 	global.Container = container
 	return &Client{
@@ -79,4 +80,4 @@ func (c *Client) SetData(dir string) *Client {
 	return c
 }
 
-//TODO 其他配置项
+// TODO 其他配置项

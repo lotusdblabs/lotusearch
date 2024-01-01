@@ -23,16 +23,16 @@ func ExecTimeWithError(fn func() error) (float64, error) {
 	return float64(time.Since(start).Nanoseconds()) / 1e6, err
 }
 
-func Encoder(data interface{}) ([]byte,error) {
+func Encoder(data interface{}) ([]byte, error) {
 	if data == nil {
-		return nil,nil
+		return nil, nil
 	}
 
 	buffer := new(bytes.Buffer)
 	encoder := gob.NewEncoder(buffer)
 	err := encoder.Encode(data)
 
-	return buffer.Bytes(),err
+	return buffer.Bytes(), err
 }
 
 func Decoder(data []byte, v interface{}) error {
@@ -167,9 +167,9 @@ func ReleaseAssets(file fs.File, out string) {
 		panic("out is empty")
 	}
 
-	//判断out文件是否存在
+	// 判断out文件是否存在
 	if _, err := os.Stat(out); os.IsNotExist(err) {
-		//读取文件信息
+		// 读取文件信息
 		fileInfo, err := file.Stat()
 		if err != nil {
 			panic(err)
@@ -187,7 +187,7 @@ func ReleaseAssets(file fs.File, out string) {
 			panic(err)
 		}
 
-		//创建文件
+		// 创建文件
 		outFile, _ := os.Create(out)
 		defer func(outFile *os.File) {
 			err := outFile.Close()
@@ -207,7 +207,7 @@ func ReleaseAssets(file fs.File, out string) {
 // DirSizeB DirSizeMB getFileSize get file size by path(B)
 func DirSizeB(path string) int64 {
 	var size int64
-	filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
 			size += info.Size()
 		}

@@ -1,11 +1,9 @@
 package web
 
 type Result struct {
-	State bool `json:"state"`
-
-	Message string `json:"message,omitempty"`
-
-	Data interface{} `json:"data,omitempty"`
+	State   bool        `json:"state"`
+	Message string      `json:"message,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
 func NewResult(state bool, message string, data interface{}) *Result {

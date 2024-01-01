@@ -3,13 +3,14 @@ package tests
 import (
 	"bufio"
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+
 	"github.com/sea-team/gofound/searcher"
 	"github.com/sea-team/gofound/searcher/model"
 	"github.com/sea-team/gofound/searcher/utils"
 	"github.com/sea-team/gofound/searcher/words"
-	"os"
-	"strings"
-	"testing"
 )
 
 func TestIndex(t *testing.T) {
@@ -46,15 +47,15 @@ func TestIndex(t *testing.T) {
 		}
 
 		lineString := string(line)
-		//fmt.Println(lineString)
+		// fmt.Println(lineString)
 		array := strings.Split(lineString, "_!_")
 		if index%1000 == 0 {
 			fmt.Println(index)
 		}
 		index++
-		//if index == 6000 {
+		// if index == 6000 {
 		//	break
-		//}
+		// }
 		data := make(map[string]interface{})
 		id++
 
@@ -68,7 +69,10 @@ func TestIndex(t *testing.T) {
 			Text:     array[3],
 			Document: data,
 		}
-		engine.IndexDocument(&doc)
+		errx := engine.IndexDocument(&doc)
+		if errx != nil {
+			fmt.Println(errx)
+		}
 	}
 	for engine.GetQueue() > 0 {
 	}
@@ -76,7 +80,7 @@ func TestIndex(t *testing.T) {
 }
 
 func TestRepeat(t *testing.T) {
-	//判断是否重复
+	// 判断是否重复
 
 	tokenizer := words.NewTokenizer("../searcher/words/data/dictionary.txt")
 	var engine = &searcher.Engine{
@@ -122,7 +126,7 @@ func TestRepeat(t *testing.T) {
 			Cid:      array[1],
 		}
 
-		//分词
+		// 分词
 		words := engine.Tokenizer.Cut(data.Title)
 		for _, word := range words {
 			key := Murmur3([]byte(word))
@@ -137,7 +141,7 @@ func TestRepeat(t *testing.T) {
 		}
 	}
 
-	//输出 value大于2的key
+	// 输出 value大于2的key
 	for key, val := range container {
 		if len(val) > 1 {
 			fmt.Println("key:", key, "value:", val)

@@ -2,8 +2,9 @@ package system
 
 import (
 	"encoding/json"
-	"github.com/shirou/gopsutil/v3/mem"
 	"runtime"
+
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 type MemStatus struct {
@@ -21,7 +22,7 @@ func (m *MemStatus) String() string {
 
 func GetMemStat() MemStatus {
 
-	//内存信息
+	// 内存信息
 	info, _ := mem.VirtualMemory()
 	m := MemStatus{
 		Total:       GetUint64GB(info.Total),
@@ -30,7 +31,7 @@ func GetMemStat() MemStatus {
 		UsedPercent: GetPercent(info.UsedPercent),
 	}
 
-	//自身占用
+	// 自身占用
 	memStat := new(runtime.MemStats)
 	runtime.ReadMemStats(memStat)
 	m.Self = GetUint64GB(memStat.Alloc)

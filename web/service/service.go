@@ -1,11 +1,12 @@
 package service
 
 import (
+	"os"
+	"runtime"
+
 	"github.com/sea-team/gofound/global"
 	"github.com/sea-team/gofound/searcher/system"
 	"github.com/sea-team/gofound/searcher/utils"
-	"os"
-	"runtime"
 )
 
 func Callback() map[string]interface{} {
@@ -23,8 +24,8 @@ func Callback() map[string]interface{} {
 		"dataSize":       system.GetFloat64MB(utils.DirSizeB(global.CONFIG.Data)),
 		"executable":     os.Args[0],
 		"dbs":            global.Container.GetDataBaseNumber(),
-		//"indexCount":     global.container.GetIndexCount(),
-		//"documentCount":  global.container.GetDocumentCount(),
+		// "indexCount":     global.container.GetIndexCount(),
+		// "documentCount":  global.container.GetDocumentCount(),
 		"pid":        os.Getpid(),
 		"enableAuth": global.CONFIG.Auth != "",
 		"enableGzip": global.CONFIG.EnableGzip,

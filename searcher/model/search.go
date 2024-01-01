@@ -1,9 +1,13 @@
 package model
 
+import (
+	"github.com/sea-team/gofound/searcher/consts"
+)
+
 // Highlight 关键词高亮
 type Highlight struct {
-	PreTag  string `json:"preTag"`  //高亮前缀
-	PostTag string `json:"postTag"` //高亮后缀
+	PreTag  string `json:"preTag"`  // 高亮前缀
+	PostTag string `json:"postTag"` // 高亮后缀
 }
 
 // SearchRequest 搜索请求
@@ -20,14 +24,14 @@ type SearchRequest struct {
 func (s *SearchRequest) GetAndSetDefault() *SearchRequest {
 
 	if s.Limit == 0 {
-		s.Limit = 100
+		s.Limit = consts.DefaultSearchLimit
 	}
 	if s.Page == 0 {
-		s.Page = 1
+		s.Page = consts.DefaultSearchPage
 	}
 
 	if s.Order == "" {
-		s.Order = "desc"
+		s.Order = consts.SearchOrderDesc
 	}
 
 	return s
@@ -35,11 +39,11 @@ func (s *SearchRequest) GetAndSetDefault() *SearchRequest {
 
 // SearchResult 搜索响应
 type SearchResult struct {
-	Time      float64       `json:"time,omitempty"`      //查询用时
-	Total     int           `json:"total"`               //总数
-	PageCount int           `json:"pageCount"`           //总页数
-	Page      int           `json:"page,omitempty"`      //页码
-	Limit     int           `json:"limit,omitempty"`     //页大小
-	Documents []ResponseDoc `json:"documents,omitempty"` //文档
-	Words     []string      `json:"words,omitempty"`     //搜索关键词
+	Time      float64       `json:"time,omitempty"`      // 查询用时
+	Total     int           `json:"total"`               // 总数
+	PageCount int           `json:"pageCount"`           // 总页数
+	Page      int           `json:"page,omitempty"`      // 页码
+	Limit     int           `json:"limit,omitempty"`     // 页大小
+	Documents []ResponseDoc `json:"documents,omitempty"` // 文档
+	Words     []string      `json:"words,omitempty"`     // 搜索关键词
 }
