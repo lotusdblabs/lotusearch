@@ -66,9 +66,11 @@ func (e *Engine) Init() {
 	if e.Timeout == 0 {
 		e.Timeout = 10 * 3 // 默认30s
 	}
-	// -1代表没有初始化
+
+	//-1代表没有初始化
 	atomic.AddInt64(&e.documentCount, -1)
-	// log.Println("数据存储目录：", e.IndexPath)
+	//log.Println("数据存储目录：", e.IndexPath)
+
 	log.Println("chain num:", e.Shard*e.BufferNum)
 
 	e.addDocumentWorkerChan = make([]chan *model.IndexDoc, e.Shard)
@@ -120,7 +122,7 @@ func (e *Engine) automaticGC() {
 }
 
 func (e *Engine) IndexDocument(doc *model.IndexDoc) error {
-	// 数量增加
+	//数量增加
 	atomic.AddInt64(&e.documentCount, 1)
 	e.addDocumentWorkerChan[e.getShard(doc.Id)] <- doc
 	return nil
@@ -261,14 +263,17 @@ func (e *Engine) optimizeIndex(id uint32, newWords []string) ([]string, bool) {
 		if removes != nil && len(removes) > 0 {
 			// 移除正排索引
 			for _, word := range removes {
-				e.removeIdInWordIndex(id, word)
+				if err := e.removeIdInWordIndex(id, word); err != nil {
+					// todo deal with remove index error
+					continue
+				}
 			}
 		}
 	}
 	return inserts, changed
 }
 
-func (e *Engine) removeIdInWordIndex(id uint32, word string) {
+func (e *Engine) removeIdInWordIndex(id uint32, word string) (err error) {
 
 	shard := e.getShardByWord(word)
 
@@ -282,6 +287,7 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 		ids := make([]uint32, 0)
 		if err := utils.Decoder(buf, &ids); err != nil {
 			log.Println("Decoder has err:", err)
+			return err
 		}
 
 		// 移除
@@ -291,7 +297,8 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 			if len(ids) == 0 {
 				err := wordStorage.Delete(key)
 				if err != nil {
-					panic(err)
+					log.Println("Encoder has err:", err)
+					return err
 				}
 			} else {
 				encodeByte, err := utils.Encoder(ids)
@@ -301,8 +308,9 @@ func (e *Engine) removeIdInWordIndex(id uint32, word string) {
 				wordStorage.Set(key, encodeByte)
 			}
 		}
-	}
 
+	}
+	return err
 }
 
 // 计算差值
@@ -361,14 +369,14 @@ func (e *Engine) addPositiveIndex(index *model.IndexDoc, keys []string) {
 		Keys:     keys,
 	}
 
-	// 存储id和key以及文档的映射
+	//存储id和key以及文档的映射
 	encodeByte, err := utils.Encoder(doc)
 	if err != nil {
 		log.Println("encode has err:", err)
 	}
 	docStorage.Set(key, encodeByte)
 
-	// 设置到id和key的映射中
+	//设置到id和key的映射中
 	encodeByteOfKeys, errs := utils.Encoder(keys)
 	if errs != nil {
 		log.Println("encode has err:", errs)
@@ -542,7 +550,7 @@ func (e *Engine) processKeySearch(word string, fastSort *sorts.FastSort, wg *syn
 	buf, find := invertedIndexStorage.Get(key)
 	if find {
 		ids := make([]uint32, 0)
-		// 解码
+		//解码
 		if err := utils.Decoder(buf, &ids); err != nil {
 			log.Println("Decoder has err:", err)
 		}
@@ -629,7 +637,10 @@ func (e *Engine) RemoveIndex(id uint32) error {
 
 	// 符合条件的key，要移除id
 	for _, word := range keys {
-		e.removeIdInWordIndex(id, word)
+		if err := e.removeIdInWordIndex(id, word); err != nil {
+			// todo deal with error
+			continue
+		}
 	}
 
 	// 删除id映射
@@ -643,7 +654,8 @@ func (e *Engine) RemoveIndex(id uint32) error {
 	if err != nil {
 		return err
 	}
-	// 减少数量
+
+	//减少数量
 	atomic.AddInt64(&e.documentCount, -1)
 
 	return nil
