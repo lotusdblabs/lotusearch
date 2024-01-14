@@ -111,6 +111,7 @@ func (e *Engine) Init() {
 // 自动保存索引，10秒钟检测一次
 func (e *Engine) automaticGC() {
 	ticker := time.NewTicker(time.Second * 10)
+	defer ticker.Stop()
 	for {
 		<-ticker.C
 		// 定时GC
