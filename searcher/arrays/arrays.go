@@ -7,10 +7,26 @@ const (
 
 // BinarySearch 二分查找
 func BinarySearch(arr []uint32, target uint32) bool {
+	if arr == nil {
+		return false
+	}
+
 	low := 0
 	high := len(arr) - 1
+	if arr[low] == target {
+		return true
+	}
+
+	if arr[high] == target {
+		return true
+	}
+
 	for low < high {
 		mid := (low + high) >> 1
+		if arr[mid] == target {
+			return true
+		}
+
 		if arr[mid] >= target {
 			high = mid
 		} else {
